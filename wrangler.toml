@@ -11,10 +11,11 @@ enabled = true
 [triggers]
 crons = ["0 16 * * SUN"]
 
-# Plan history (last 3 plans are not repeated). Created on first deploy, then reused.
+# Plan history (last 3 plans are not repeated).
 # Secrets: TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, WEBHOOK_SECRET, SPOONACULAR_API_KEY (docs/deploy.md).
 [[kv_namespaces]]
 binding = "MEALROT_KV"
+id = "ccb4c6c0f6e948428282918e24b20e4a" # mealrot-mealrot-kv
 
 # The Worker's first version had a Durable Object class, still on the account as migration v1;
 # a deploy without its export needs the delete.
