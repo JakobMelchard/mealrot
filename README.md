@@ -1,10 +1,10 @@
 # mealrot
 
-Meal-prep suggestions in one Telegram chat. Every Sunday 16:00 UTC, and on `/plan`, the Worker researches one-pot main courses on Spoonacular (inside the kcal and protein limits per serving), picks 2 and sends one message per meal with its link, so Telegram previews it. Each recipe is a batch of 6 portions. Plans from the last 3 sends are not repeated; protein, cuisine and base are varied.
+Meal-prep suggestions in one Telegram chat. Every Sunday 16:00 UTC, and on `/plan`, the Worker researches one-pot main courses on Spoonacular (inside the kcal and protein limits per serving), picks 2 and sends one message per meal with its link, so Telegram previews it. Each recipe is a batch of 6 portions. Each meal has buttons: Reroll swaps it for another recipe from the same search (no new search; `/reroll [n]` does the same), Save keeps it for later plans. Plans from the last 3 sends are not repeated (KV: `history`, `current`, `saved`); protein, cuisine and base are varied.
 
 | Path                   | Contents                                                |
 | ---------------------- | ------------------------------------------------------- |
-| `functions/index.js`   | Webhook (`/plan`, `/start`), cron, message format       |
+| `functions/index.js`   | Webhook (`/plan`, `/reroll`, buttons), cron, KV state   |
 | `functions/spoon.js`   | Spoonacular `complexSearch`, about 2 of 50 daily points |
 | `functions/planner.js` | Limits, filter and pick                                 |
 
@@ -25,5 +25,5 @@ Once after the first deploy, and again if `WEBHOOK_SECRET` changes. Only the cha
 ```sh
 curl -sS "https://api.telegram.org/bot$TELEGRAM_TOKEN/setWebhook" \
   -d url=https://mealrot.melchard.org/ -d secret_token="$WEBHOOK_SECRET" \
-  -d 'allowed_updates=["message"]'
+  -d 'allowed_updates=["message","callback_query"]'
 ```

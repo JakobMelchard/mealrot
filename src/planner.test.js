@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { LIMITS, plan } from './planner.js'
+import { LIMITS, plan, reroll } from './planner.js'
 
 /**
  * @param {string} name
@@ -55,4 +55,22 @@ test('an old plan is forgotten after three', () => {
 
 test('no eligible recipe, no picks', () => {
   assert.deepEqual(plan([r('x', 'beef', 1000)], LIMITS, [], 1), [])
+})
+
+test('reroll swaps one slot for a recipe not already picked', () => {
+  const picks = pool.slice(0, 2)
+  for (let seed = 0; seed < 20; seed++) {
+    const out = reroll(pool, LIMITS, [], picks, 0, seed)
+    assert.equal(out?.[1], picks[1])
+    assert.ok(out?.[0] && !picks.includes(out[0]))
+  }
+})
+
+test('reroll prefers recipes outside the last plans', () => {
+  for (let seed = 0; seed < 20; seed++)
+    assert.equal(reroll(pool, LIMITS, [['c']], pool.slice(0, 2), 0, seed)?.[0]?.name, 'd')
+})
+
+test('reroll with no other recipe is null', () => {
+  assert.equal(reroll(pool.slice(0, 2), LIMITS, [], pool.slice(0, 2), 0, 1), null)
 })

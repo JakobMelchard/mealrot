@@ -75,6 +75,14 @@ const pick = (cands, chosen, c, rand) => {
 }
 
 /**
+ * @param {Recipe[]} rs candidates
+ * @param {Config} c limits
+ * @returns {Recipe[]} eligible recipes, first of each name
+ */
+const uniq = (rs, c) =>
+  eligible(rs, c).filter((r, i, a) => a.findIndex((x) => x.name === r.name) === i)
+
+/**
  * Pick `weeklyRecipes` eligible recipes. Names in the last KEEP plans are left out unless
  * too few others remain.
  * @param {Recipe[]} rs candidates
@@ -86,7 +94,7 @@ const pick = (cands, chosen, c, rand) => {
 export const plan = (rs, c, history, seed) => {
   const rand = rng(seed)
   const used = new Set(history.slice(-KEEP).flat())
-  const all = eligible(rs, c).filter((r, i, a) => a.findIndex((x) => x.name === r.name) === i)
+  const all = uniq(rs, c)
   const fresh = all.filter((r) => !used.has(r.name))
   const list = fresh.length >= c.weeklyRecipes ? fresh : all
   /** @type {Recipe[]} */ const picks = []
@@ -96,4 +104,29 @@ export const plan = (rs, c, history, seed) => {
     picks.push(pick(left, picks, c, rand))
   }
   return picks
+}
+
+/**
+ * Swap picks[slot] for another eligible recipe, preferring ones not in the last KEEP plans.
+ * @param {Recipe[]} rs candidates
+ * @param {Config} c limits
+ * @param {string[][]} history past plans excluding the current one, oldest first
+ * @param {Recipe[]} picks current picks
+ * @param {number} slot index to replace
+ * @param {number} seed random seed
+ * @returns {Recipe[] | null} the new picks, null when no other recipe is available
+ */
+export const reroll = (rs, c, history, picks, slot, seed) => {
+  const used = new Set(history.slice(-KEEP).flat())
+  const all = uniq(rs, c).filter((r) => !picks.some((p) => p.name === r.name))
+  const fresh = all.filter((r) => !used.has(r.name))
+  const list = fresh.length ? fresh : all
+  if (!list.length) return null
+  const next = pick(
+    list,
+    picks.filter((_, i) => i !== slot),
+    c,
+    rng(seed),
+  )
+  return picks.map((r, i) => (i === slot ? next : r))
 }
