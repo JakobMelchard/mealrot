@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mealrot",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": false,
+  "routes": [{ "pattern": "mealrot.melchard.org", "custom_domain": true }],
+  "observability": { "enabled": true },
+  // Sunday 16:00 UTC: the weekly suggestion
+  "triggers": { "crons": ["0 16 * * SUN"] },
+  // Plan history (last 3 plans are not repeated).
+  // Secrets: TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, WEBHOOK_SECRET, SPOONACULAR_API_KEY.
+  "kv_namespaces": [{ "binding": "MEALROT_KV", "id": "ccb4c6c0f6e948428282918e24b20e4a" }],
+  // The Worker's first version had a Durable Object class, still on the account as migration v1;
+  // a deploy without its export needs the delete.
+  "migrations": [
+    { "tag": "v1", "new_classes": ["Mealrot"] },
+    { "tag": "v2", "deleted_classes": ["Mealrot"] }
+  ]
+}

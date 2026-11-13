@@ -2,21 +2,25 @@
 
 Meal-prep suggestions in one Telegram chat. Every Sunday 16:00 UTC, and on `/plan`, the Worker researches one-pot main courses on Spoonacular (inside the kcal and protein limits per serving), picks 2 and sends one message per meal with its link, so Telegram previews it. Each recipe is a batch of 6 portions. Each meal has buttons: Reroll swaps it for another recipe from the same search (no new search; `/reroll [n]` does the same), Save keeps it for later plans. Plans from the last 3 sends are not repeated (KV: `history`, `current`, `saved`); protein, cuisine and base are varied.
 
-| Path                   | Contents                                                |
-| ---------------------- | ------------------------------------------------------- |
-| `functions/index.js`   | Webhook (`/plan`, `/reroll`, buttons), cron, KV state   |
-| `functions/spoon.js`   | Spoonacular `complexSearch`, about 2 of 50 daily points |
-| `functions/planner.js` | Limits, filter and pick                                 |
+| Path             | Contents                                                |
+| ---------------- | ------------------------------------------------------- |
+| `src/index.js`   | Webhook (`/plan`, `/reroll`, buttons), cron, KV state   |
+| `src/spoon.js`   | Spoonacular `complexSearch`, about 2 of 50 daily points |
+| `src/planner.js` | Limits, filter and pick                                 |
 
 ```sh
-make validate    # from the repo root; tests, tsc, eslint, wrangler dry run
+brew install prek && prek install
+npm install
+npm run typecheck && npm run lint && npm test
+npx wrangler deploy --dry-run
+npx wrangler dev        # secrets in .dev.vars
 ```
 
 Limits are `LIMITS` in `planner.js`: 650 kcal (+-10%), 35 g protein minimum, 45 g target, 2 recipes.
 
 ## Secrets
 
-Infisical `cloudflare` `/workers/mealrot`: `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID`, `WEBHOOK_SECRET` (any random string), `SPOONACULAR_API_KEY`.
+Worker secrets: `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID`, `WEBHOOK_SECRET` (any random string), `SPOONACULAR_API_KEY`.
 
 ## Webhook
 

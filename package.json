@@ -1,0 +1,22 @@
+{
+  "name": "mealrot",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "lint": "eslint .",
+    "typecheck": "tsc",
+    "test": "node --test \"src/*.test.js\""
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@jakobmelchard/config": "^3.1.0",
+    "@types/node": "^22",
+    "eslint": "^10.11.0",
+    "eslint-plugin-jsdoc": "^64.5.4",
+    "globals": "^17.12.0",
+    "typescript": "^5",
+    "wrangler": "^4"
+  }
+}
