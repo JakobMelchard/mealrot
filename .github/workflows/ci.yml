@@ -10,13 +10,13 @@ on:
 
 jobs:
   ci:
-    uses: JakobMelchard/.github/.github/workflows/node.yml@df18859960a81d988ca3c7498bdd6a2dc976fec9 # v2.6.0
+    uses: JakobMelchard/.github/.github/workflows/node.yml@6ffac07db8fd93257bda7282c797b1d63fdef596 # v2.8.1
     with:
       install-cmd: npm install   # switch to npm ci once package-lock.json is committed
       check-cmd: npm run typecheck
       test-cmd: npm test
 
   hooks:
-    uses: JakobMelchard/.github/.github/workflows/hooks.yml@df18859960a81d988ca3c7498bdd6a2dc976fec9 # v2.6.0
+    uses: JakobMelchard/.github/.github/workflows/hooks.yml@6ffac07db8fd93257bda7282c797b1d63fdef596 # v2.8.1
     with:
       skip: eslint   # needs node_modules; node.yml lints

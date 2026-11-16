@@ -9,7 +9,7 @@ permissions: {}
 
 jobs:
   review-label:
-    uses: JakobMelchard/.github/.github/workflows/review-label.yml@df18859960a81d988ca3c7498bdd6a2dc976fec9 # v2.6.0
+    uses: JakobMelchard/.github/.github/workflows/review-label.yml@6ffac07db8fd93257bda7282c797b1d63fdef596 # v2.8.1
     permissions:
       contents: read
       id-token: write
