@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { LIMITS, plan, reroll } from './planner.js'
+import { LIMITS, eligible, plan, reroll, rng } from './planner.js'
 
 /**
  * @param {string} name
@@ -73,4 +73,27 @@ test('reroll prefers recipes outside the last plans', () => {
 
 test('reroll with no other recipe is null', () => {
   assert.equal(reroll(pool.slice(0, 2), LIMITS, [], pool.slice(0, 2), 0, 1), null)
+})
+
+test('rng is deterministic per seed and stays in [0, 1)', () => {
+  const a = rng(42)
+  const b = rng(42)
+  const xs = Array.from({ length: 20 }, () => a())
+  assert.deepEqual(xs, Array.from({ length: 20 }, () => b()))
+  assert.ok(xs.every((x) => x >= 0 && x < 1))
+})
+
+test('eligible keeps only recipes within the protein and kcal limits', () => {
+  const out = [
+    r('low', 'beef', 650, 34),
+    r('high', 'beef', 650, 35),
+    r('light', 'beef', 585),
+    r('heavy', 'beef', 715),
+    r('too-light', 'beef', 584),
+    r('too-heavy', 'beef', 716),
+  ]
+  assert.deepEqual(
+    eligible(out, LIMITS).map((x) => x.name),
+    ['high', 'light', 'heavy'],
+  )
 })
