@@ -1,5 +1,5 @@
 // Worker for mealrot: the Sunday cron and /plan in the Telegram chat each send a meal-prep suggestion.
-import { KEEP, LIMITS, plan, reroll } from './planner.js'
+import { config, LIMITS, plan, reroll } from './planner.js'
 import { search } from './spoon.js'
 
 /** @typedef {import('./planner.js').Recipe} Recipe */
@@ -10,6 +10,13 @@ import { search } from './spoon.js'
  * @property {string} TELEGRAM_CHAT_ID the one chat allowed to talk to the bot
  * @property {string} WEBHOOK_SECRET secret_token given to setWebhook
  * @property {string} SPOONACULAR_API_KEY Spoonacular API key
+ * @property {string | number} [KCAL] target kcal per portion
+ * @property {string | number} [KCAL_TOLERANCE] kcal tolerance fraction
+ * @property {string | number} [PROTEIN_MIN] minimum protein g per portion
+ * @property {string | number} [PROTEIN_TARGET] target protein g per portion
+ * @property {string | number} [WEEKLY_RECIPES] recipes per plan
+ * @property {string | number} [PORTIONS] portions per recipe
+ * @property {string | number} [HISTORY_KEEP] recent plans to avoid repeating
  */
 /** @typedef {{picks: Recipe[], pool: Recipe[], ids: number[]}} Current the latest plan, this search's candidates, its message ids */
 /** @typedef {{message_id?: number, chat?: {id: number}, text?: string}} TgMessage */
@@ -65,11 +72,12 @@ const say = (env, text, markup) =>
  * One meal's message; its link is the only one, so Telegram previews it.
  * @param {Recipe} r recipe
  * @param {number} i slot, 0-based
+ * @param {number} [portions] portions per recipe
  * @returns {string} Telegram message
  */
-export const meal = (r, i) => {
+export const meal = (r, i, portions = LIMITS.portions) => {
   const m = r.macros
-  return `${i + 1}. ${r.name}: ${Math.round(m.kcal)} kcal, ${Math.round(m.protein)}P/${Math.round(m.carbs)}C/${Math.round(m.fat)}F per portion (6 portions)\n${r.url}`
+  return `${i + 1}. ${r.name}: ${Math.round(m.kcal)} kcal, ${Math.round(m.protein)}P/${Math.round(m.carbs)}C/${Math.round(m.fat)}F per portion (${portions} portions)\n${r.url}`
 }
 
 /**
@@ -92,28 +100,30 @@ const keys = (i) => ({
  * @returns {Promise<void>}
  */
 export const suggest = async (env) => {
+  const c = config(env)
   const seed = crypto.getRandomValues(new Uint32Array(1))[0] ?? 0
   /** @type {string[][]} */
   const hist = await load(env, 'history', [])
   /** @type {Recipe[]} */
   let pool
   try {
-    pool = await search(env.SPOONACULAR_API_KEY, LIMITS, seed)
+    pool = await search(env.SPOONACULAR_API_KEY, c, seed)
   } catch (e) {
     await say(env, `Research failed: ${e instanceof Error ? e.message : e}`)
     return
   }
-  const picks = plan([...pool, ...(await load(env, 'saved', []))], LIMITS, hist, seed)
+  const picks = plan([...pool, ...(await load(env, 'saved', []))], c, hist, seed)
   if (!picks.length) {
     await say(env, 'No recipe passes the protein/kcal filter')
     return
   }
   const ids = []
-  for (const [i, r] of picks.entries()) ids.push((await say(env, meal(r, i), keys(i))).message_id)
+  for (const [i, r] of picks.entries())
+    ids.push((await say(env, meal(r, i, c.portions), keys(i))).message_id)
   await env.MEALROT_KV.put('current', JSON.stringify({ picks, pool, ids }))
   await env.MEALROT_KV.put(
     'history',
-    JSON.stringify([...hist, picks.map((r) => r.name)].slice(-KEEP)),
+    JSON.stringify([...hist, picks.map((r) => r.name)].slice(-c.historyKeep)),
   )
 }
 
@@ -125,6 +135,7 @@ export const suggest = async (env) => {
  * @returns {Promise<void>}
  */
 const swap = async (env, n) => {
+  const c = config(env)
   const cur = await current(env)
   if (!cur) return void (await say(env, 'No plan yet. /plan makes one.'))
   const seed = crypto.getRandomValues(new Uint32Array(1))[0] ?? 0
@@ -135,7 +146,7 @@ const swap = async (env, n) => {
   const hist = await load(env, 'history', [])
   const picks = reroll(
     [...cur.pool, ...(await load(env, 'saved', []))],
-    LIMITS,
+    c,
     hist.slice(0, -1),
     cur.picks,
     slot,
@@ -146,7 +157,7 @@ const swap = async (env, n) => {
   await tg(env, 'editMessageText', {
     chat_id: env.TELEGRAM_CHAT_ID,
     message_id: cur.ids[slot],
-    text: meal(r, slot),
+    text: meal(r, slot, c.portions),
     reply_markup: keys(slot),
   })
   await env.MEALROT_KV.put('current', JSON.stringify({ ...cur, picks }))

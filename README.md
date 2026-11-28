@@ -40,6 +40,19 @@ Only the configured chat is accepted; the webhook validates its secret token.
 - At least 35 g protein per serving, 45 g target.
 - Prefers recipes that are not in the last three plans, falling back when too few remain.
 - Varies protein, cuisine and base across the pair.
+- Defaults are overridden through `wrangler.jsonc` `vars` or Worker environment variables.
+
+## Configuration
+
+| Variable | Default | Rule |
+|---|---|---|
+| `KCAL` | `650` | `> 0` |
+| `KCAL_TOLERANCE` | `0.1` | `[0, 1)` |
+| `PROTEIN_MIN` | `35` | `>= 0` |
+| `PROTEIN_TARGET` | `45` | `>= 0` |
+| `WEEKLY_RECIPES` | `2` | positive integer |
+| `PORTIONS` | `6` | positive integer |
+| `HISTORY_KEEP` | `3` | positive integer |
 
 ## Layout
 
