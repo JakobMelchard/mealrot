@@ -206,3 +206,60 @@ test('buttons from another chat are ignored', async () => {
   })
   assert.deepEqual(calls, [])
 })
+
+test('planner parameters are configurable via env vars', async () => {
+  const orig = globalThis.fetch
+  /** @type {string[]} */
+  const urls = []
+  globalThis.fetch = /** @type {typeof fetch} */ (
+    async (url, init) => {
+      if (String(url).startsWith('https://api.spoonacular.com')) {
+        urls.push(String(url))
+        return Response.json({
+          results: [
+            { ...result('One'), nutrition: { nutrients: [{ name: 'Calories', amount: 800 }, { name: 'Protein', amount: 40 }] } },
+            { ...result('Two'), nutrition: { nutrients: [{ name: 'Calories', amount: 800 }, { name: 'Protein', amount: 40 }] } },
+          ],
+        })
+      }
+      const body = JSON.parse(String(init?.body))
+      const method = String(url).split('/').pop() ?? ''
+      calls.push({ method, body })
+      if (method === 'sendMessage') sent.push(body.text)
+      return Response.json({ ok: true, result: { message_id: 100 + sent.length } })
+    }
+  )
+  try {
+    kv = { history: JSON.stringify([['h1'], ['h2']]) }
+    waiting = []
+    const custom = {
+      ...env,
+      KCAL: '800',
+      KCAL_TOLERANCE: '0.25',
+      PROTEIN_MIN: '30',
+      WEEKLY_RECIPES: '1',
+      PORTIONS: '4',
+      HISTORY_KEEP: '1',
+    }
+    const res = await worker.fetch(
+      new Request('https://x.test/', {
+        method: 'POST',
+        headers: { 'x-telegram-bot-api-secret-token': 's' },
+        body: JSON.stringify(msg('/plan')),
+      }),
+      custom,
+      ctx,
+    )
+    await Promise.all(waiting)
+    assert.equal(res.status, 200)
+    const q = new URL(urls[0] ?? '').searchParams
+    assert.equal(q.get('minProtein'), '30')
+    assert.equal(q.get('minCalories'), '600')
+    assert.equal(q.get('maxCalories'), '1000')
+    assert.equal(sent.length, 1)
+    assert.match(sent[0] ?? '', /\(4 portions\)/)
+    assert.equal(JSON.parse(kv.history ?? '[]').length, 1)
+  } finally {
+    globalThis.fetch = orig
+  }
+})

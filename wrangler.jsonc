@@ -16,5 +16,14 @@
   "migrations": [
     { "tag": "v1", "new_classes": ["Mealrot"] },
     { "tag": "v2", "deleted_classes": ["Mealrot"] }
-  ]
+  ],
+  "vars": {
+    "KCAL": 650,
+    "KCAL_TOLERANCE": 0.1,
+    "PROTEIN_MIN": 35,
+    "PROTEIN_TARGET": 45,
+    "WEEKLY_RECIPES": 2,
+    "PORTIONS": 6,
+    "HISTORY_KEEP": 3
+  }
 }

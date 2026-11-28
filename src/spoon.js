@@ -1,4 +1,5 @@
 // Recipe research: fresh one-pot candidates from Spoonacular, mapped to the planner's Recipe.
+import { LIMITS } from './planner.js'
 
 /** @typedef {import('./planner.js').Recipe} Recipe */
 /** @typedef {import('./planner.js').Config} Config */
@@ -101,12 +102,13 @@ export const toRecipe = (r) => {
  * @returns {Promise<Recipe[]>} candidates, possibly empty
  */
 export const search = async (key, c, seed) => {
+  const tol = c.kcalTolerance ?? LIMITS.kcalTolerance
   const q = new URLSearchParams({
     query: /** @type {string} */ (QUERIES[seed % QUERIES.length]),
     type: 'main course',
     minProtein: String(c.proteinMin),
-    minCalories: String(Math.round(c.kcal * 0.9)),
-    maxCalories: String(Math.round(c.kcal * 1.1)),
+    minCalories: String(Math.round(c.kcal * (1 - tol))),
+    maxCalories: String(Math.round(c.kcal * (1 + tol))),
     addRecipeInformation: 'true',
     addRecipeNutrition: 'true',
     fillIngredients: 'true',

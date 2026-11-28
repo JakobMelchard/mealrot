@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { LIMITS, eligible, plan, reroll, rng } from './planner.js'
+import { LIMITS, config, eligible, plan, reroll, rng } from './planner.js'
 
 /**
  * @param {string} name
@@ -96,4 +96,52 @@ test('eligible keeps only recipes within the protein and kcal limits', () => {
     eligible(out, LIMITS).map((x) => x.name),
     ['high', 'light', 'heavy'],
   )
+})
+
+test('config parses valid overrides and falls back on blank or invalid values', () => {
+  assert.deepEqual(config(undefined), LIMITS)
+  assert.deepEqual(
+    config({
+      KCAL: '700',
+      KCAL_TOLERANCE: 0.2,
+      PROTEIN_MIN: '30',
+      PROTEIN_TARGET: '50',
+      WEEKLY_RECIPES: '3',
+      PORTIONS: 4,
+      HISTORY_KEEP: '5',
+    }),
+    {
+      kcal: 700,
+      kcalTolerance: 0.2,
+      proteinMin: 30,
+      proteinTarget: 50,
+      weeklyRecipes: 3,
+      portions: 4,
+      historyKeep: 5,
+    },
+  )
+  assert.deepEqual(
+    config({
+      KCAL: '0',
+      KCAL_TOLERANCE: '1',
+      PROTEIN_MIN: '-1',
+      PROTEIN_TARGET: 'abc',
+      WEEKLY_RECIPES: '1.5',
+      PORTIONS: '',
+      HISTORY_KEEP: 0,
+    }),
+    LIMITS,
+  )
+})
+
+test('eligible and plan respect custom kcalTolerance and historyKeep', () => {
+  const c = { ...LIMITS, kcalTolerance: 0.2, historyKeep: 1 }
+  assert.deepEqual(
+    eligible([r('a', 'beef', 780), r('b', 'beef', 781)], c).map((x) => x.name),
+    ['a'],
+  )
+  for (let seed = 0; seed < 20; seed++) {
+    const names = plan(pool, c, [['a', 'b'], ['c']], seed).map((x) => x.name)
+    assert.ok(!names.includes('c'))
+  }
 })
